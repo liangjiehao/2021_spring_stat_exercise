@@ -1,0 +1,83 @@
+---
+title: "third_exercise_commit"
+author: "LJH"
+date: "2021年5月10日"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 3.3
+### 12
+```{r}
+strength<-c(147,186,141,183,190,123,155,164,183,
+            150,134,170,144,99,156,176,160,174,
+            153,162,167,179,78,173,168)
+shapiro.test(strength)
+```
+在0.01的水平下拒绝正态性分布假设
+```{r}
+shapiro.test(log(204-strength))
+```
+不能拒绝正态性分布假设,且p值较大，可以认为服从正态分布
+```{r}
+par(mfrow=c(1,2))
+hist(strength)
+hist(log(204-strength))
+```
+
+### 15
+```{r}
+birth1.h<-c(3,8,8,1,8,10,9,7,3,10,6,0,5,5,6,2,10,11)
+birth1.m<-c(56,12,40,24,25,7,6,40,2,45,26,26,8,49,32,28,6,19)
+birth1<-birth1.h*60+birth1.m
+birth2.h<-c(7,11,0,10,2,11,1,3,3,4,2,11,0,1,0,3,4,7,4)
+birth2.m<-c(2,8,25,7,2,46,53,57,6,44,17,45,40,30,55,22,9,46,31)
+birth2<-(birth2.h+12)*60+birth2.m
+
+birth<-c(birth1,birth2)
+
+ks.test(birth,punif,0,1440)
+```
+不能拒绝（0，1440）均匀分布的假设
+
+
+## 3.4
+```{r}
+
+I2000<-read.table("I2000.txt",sep=" ")
+tissues<-read.table("tissues.txt",sep=" ")
+normal<-tissues>0
+tumor<-tissues<0
+
+two.sample.t<-function(genes,sample1,sample2){
+  t.test(genes[sample1],genes[sample2])$p.value
+}
+
+N<-2000
+alpha<-0.05
+
+#Bonferroni's procedure
+gene<-1:N
+t.result<-apply(I2000,1,two.sample.t,normal,tumor)
+gene.bon.selected<-gene[t.result<alpha/N]
+
+#Holm's procedure
+t.result.sort<-sort(t.result,index.return=TRUE)
+Holm.threshold<-t.result.sort$x[min(which(t.result.sort$x>alpha/(N-gene+1)))]
+gene.holm.selected<-gene[t.result<Holm.threshold]
+
+#FDR
+q<-0.05
+FDR.threshold<-t.result.sort$x[max(which(t.result.sort$x<=gene/N*q))]
+gene.fdr.selected<-gene[t.result<FDR.threshold]
+
+#Bonferroni's procedure
+gene.bon.selected
+#Holm's procedure
+gene.holm.selected
+#FDR
+gene.fdr.selected
+```

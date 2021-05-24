@@ -59,3 +59,130 @@ data<-data.frame(A=c(38.7,41.5,43.8,44.5,45.5,46.0,47.7,58.0),
 boxplot(data)
 ```
 
+## 3.3
+### 12
+```{r}
+strength<-c(147,186,141,183,190,123,155,164,183,
+            150,134,170,144,99,156,176,160,174,
+            153,162,167,179,78,173,168)
+shapiro.test(strength)
+shapiro.test(log(204-strength))
+par(mfrow=c(1,2))
+hist(strength)
+hist(log(204-strength))
+
+```
+
+### 15
+```{r}
+birth1.h<-c(3,8,8,1,8,10,9,7,3,10,6,0,5,5,6,2,10,11)
+birth1.m<-c(56,12,40,24,25,7,6,40,2,45,26,26,8,49,32,28,6,19)
+birth1<-birth1.h*60+birth1.m
+birth2.h<-c(7,11,0,10,2,11,1,3,3,4,2,11,0,1,0,3,4,7,4)
+birth2.m<-c(2,8,25,7,2,46,53,57,6,44,17,45,40,30,55,22,9,46,31)
+birth2<-(birth2.h+12)*60+birth2.m
+
+birth<-c(birth1,birth2)
+
+ks.test(birth,punif,0,1440)
+```
+
+
+
+## 3.4
+```{r}
+I2000<-read.table("I2000.txt",sep=" ")
+tissues<-read.table("tissues.txt",sep=" ")
+normal<-tissues>0
+tumor<-tissues<0
+
+two.sample.t<-function(genes,sample1,sample2){
+  t.test(genes[sample1],genes[sample2])$p.value
+}
+
+N<-2000
+alpha<-0.05
+#Bonferroni's procedure
+gene<-1:N
+t.result<-apply(I2000,1,two.sample.t,normal,tumor)
+gene.bon.selected<-gene[t.result<alpha/N]
+
+#Holm's procedure
+t.result.sort<-sort(t.result,index.return=TRUE)
+Holm.threshold<-t.result.sort$x[min(which(t.result.sort$x>alpha/(N-gene+1)))]
+gene.holm.selected<-gene[t.result<Holm.threshold]
+
+#FDR
+q<-0.05
+FDR.threshold<-t.result.sort$x[max(which(t.result.sort$x<=gene/N*q))]
+gene.fdr.selected<-gene[t.result<FDR.threshold]
+```
+
+
+### Ex. 4.3.3
+```{r}
+alpha<-0.9
+a<-2
+b<-42868
+
+pdf<-function(x){
+  (b/x)^3*exp(-b/x)
+}
+cdf<-function(x){
+  (1+b/x)*exp(-b/x)
+}
+
+mod<-b/3
+theta.u<-b
+theta.l<-1
+
+theta.u.l<-mod
+theta.u.u<-2*theta.u
+
+epsilon<-1e-6
+prob<-cdf(theta.u)-cdf(theta.l)-alpha
+
+while(TRUE){
+  #dichotomy
+  
+  p.u<-pdf(theta.u)
+  p.l<-pdf(theta.l)
+  
+  #find theta.lower
+  theta.l.u<-mod
+  theta.l.l<-1
+  while(abs(p.u-p.l)>epsilon){
+    if (p.u-p.l>0){
+      theta.l.l<-theta.l
+      theta.l<-(theta.l+theta.l.u)/2
+    }
+    else{
+      theta.l.u<-theta.l
+      theta.l<-(theta.l+theta.l.l)/2
+    }
+    p.l<-pdf(theta.l)
+  }
+  
+  prob<-cdf(theta.u)-cdf(theta.l)-alpha
+  
+  if (abs(prob)<epsilon){
+    break
+  }
+  
+  #update theta.upper
+  if (prob<0){
+    theta.u.l<-theta.u
+    theta.u<-(theta.u.l+theta.u.u)/2
+  }
+  else{
+    theta.u.u<-theta.u
+    theta.u<-(theta.u.l+theta.u.u)/2
+  }
+  print(c(theta.l,theta.u))
+}
+
+#print(c(theta.l,theta.u,pdf(theta.l),pdf(theta.u),cdf(theta.l),cdf(theta.u),cdf(theta.u)-cdf(theta.l)))
+
+print(c(theta.l,theta.u))
+
+```

@@ -53,6 +53,9 @@ normal<-tissues>0
 tumor<-tissues<0
 
 two.sample.t<-function(genes,sample1,sample2){
+  #result<-t.test(genes[sample1],genes[sample2])
+  #z<-qnorm(pt(result$statistic,df=result$parameter))
+  #return(1-pnorm(z))
   t.test(genes[sample1],genes[sample2])$p.value
 }
 

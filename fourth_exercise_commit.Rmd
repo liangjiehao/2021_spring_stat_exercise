@@ -1,0 +1,73 @@
+---
+title: "fourth_exercise_commit"
+author: "LJH"
+date: "2021年5月24日"
+output: html_document
+---
+
+### Ex. 4.3.3
+```{r}
+alpha<-0.9
+a<-2
+b<-42868
+
+pdf<-function(x){
+  (b/x)^3*exp(-b/x)
+}
+cdf<-function(x){
+  (1+b/x)*exp(-b/x)
+}
+
+mod<-b/3
+theta.u<-b
+theta.l<-1
+
+theta.u.l<-mod
+theta.u.u<-2*theta.u
+
+epsilon<-1e-6
+prob<-cdf(theta.u)-cdf(theta.l)-alpha
+
+while(TRUE){
+  #dichotomy
+  
+  p.u<-pdf(theta.u)
+  p.l<-pdf(theta.l)
+  
+  #find theta.lower
+  theta.l.u<-mod
+  theta.l.l<-1
+  while(abs(p.u-p.l)>epsilon){
+    if (p.u-p.l>0){
+      theta.l.l<-theta.l
+      theta.l<-(theta.l+theta.l.u)/2
+    }
+    else{
+      theta.l.u<-theta.l
+      theta.l<-(theta.l+theta.l.l)/2
+    }
+    p.l<-pdf(theta.l)
+  }
+  
+  prob<-cdf(theta.u)-cdf(theta.l)-alpha
+  
+  if (abs(prob)<epsilon){
+    break
+  }
+  
+  #update theta.upper
+  if (prob<0){
+    theta.u.l<-theta.u
+    theta.u<-(theta.u.l+theta.u.u)/2
+  }
+  else{
+    theta.u.u<-theta.u
+    theta.u<-(theta.u.l+theta.u.u)/2
+  }
+  print(c(theta.l,theta.u))
+}
+
+# CI
+print(c(theta.l,theta.u))
+
+```

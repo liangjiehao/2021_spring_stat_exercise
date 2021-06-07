@@ -1,0 +1,100 @@
+---
+title: "sixth_exercise_commit"
+author: "LJH"
+date: "2021年6月7日"
+output: html_document
+---
+
+### Ex. 5.4.1
+```{r,message=FALSE,warning=FALSE}
+library(lars)
+library(corrplot)
+library(caret)
+library(glmnet)
+library(leaps)
+```
+
+```{r}
+data("diabetes")
+attach(diabetes)
+data.y<-diabetes[,2]
+data.x<-unclass(diabetes[,3])
+dt<-data.frame(y=data.y,data.x)
+```
+
+绘制变量之间的相关系数热图：
+
+```{r,echo=FALSE}
+res<-cor(dt[1:11])
+corrplot(res, type = "upper", order = "hclust", tl.col = "black", tl.srt = 45)
+```
+
+可以看到，$y$与单个变量的相关性较弱，而变量之间的相关性也不显著，只有$tch$与$hdl$，$ldl$与$tc$存在较强相关性
+
+```{r}
+#划分训练集和测试集
+
+train<-sample(1:nrow(dt),300)
+dt.train<-dt[train,]
+dt.test<-dt[-train,]
+
+#使用交叉验证选取最佳变量组合
+
+nv<-64
+k<-10
+folds<-sample(1:k,nrow(dt.train),replace = TRUE)
+cv.errors.reg<-matrix(0,k,nv)
+
+for ( j in 1:k){
+  regfit<-regsubsets(y~.,data=dt.train[folds!=j,],method="backward",really.big = TRUE,nvmax=nv)
+  test.mat<-model.matrix(y~.,data=dt.train[folds==j,])
+  for (i in 1:nv){
+    coefi<-coef(regfit,id=i)
+    pred<-test.mat[,names(coefi)]%*%coefi
+    cv.errors.reg[j,i]<-mean((dt.train[folds==j,1]-pred)^2)
+  }
+}
+mean.cv.errors.reg<-apply(cv.errors.reg,2,mean)
+best.nv<-which.min(mean.cv.errors.reg)
+
+#使用交叉验证选取最合适的K
+
+K<-20
+cv.errors.knn<-matrix(0,k,K)
+for (j in 1:k){
+  for (i in 1:K){
+    knnfit<-knnreg(dt.train[folds!=j,-1],dt.train[folds!=j,1],k=i)
+    cv.errors.knn[j,i]<-mean((dt.train[folds==j,1]-predict(knnfit,dt.train[folds==j,-1]))^2)
+  }
+}
+mean.cv.errors.knn<-apply(cv.errors.knn,2,mean)
+best.K<-which.min(mean.cv.errors.knn)
+```
+
+best linear regression model's $MSE_{cv}$
+```{r,echo=FALSE}
+mean.cv.errors.reg[best.nv]
+```
+best KNN regression model's $MSE_{cv}$：
+```{r,echo=FALSE}
+mean.cv.errors.knn[best.K]
+```
+
+best linear regression model's $MSE_{test}$
+```{r,echo=FALSE}
+regfit<-regsubsets(y~.,data=dt.train,method="backward",really.big = TRUE,nvmax=nv)
+test.mat<-model.matrix(y~.,data=dt.test)
+coefi<-coef(regfit,best.nv)
+pred<-test.mat[,names(coefi)]%*%coefi
+coefi
+mean((dt.test[,1]-pred)^2)
+```
+
+best KNN regression model's $MSE_{test}$
+```{r,echo=FALSE}
+knnfit<-knnreg(dt.train[,-1],dt.train[,1],k=best.K)
+mean((dt.test[,1]-predict(knnfit,dt.test[,-1]))^2)
+```
+
+### Conclusion:**linear regression** model is better
+```

@@ -1,0 +1,28 @@
+---
+title: "fifth_exercise_commit"
+author: "LJH"
+date: "2021年6月7日"
+output: html_document
+---
+
+### Ex. 5.3.2
+```{r}
+data<-c(94,197,16,38,99,141,23)
+mu<-129
+sigma<-66.77
+n<-1000
+count<-0
+for (i in 1:n){
+  z.b<-rnorm(7,mu,sigma)
+  t.b<-(mean(z.b)-mu)/sqrt(var(z.b)/7)
+  if(t.b < -1.67){
+    count<-count+1
+  }
+}
+```
+
+再抽样检验统计量小于$-1.67$的次数：
+
+```{r,echo=FALSE}
+print(count)
+```
